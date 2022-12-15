@@ -97,31 +97,6 @@ read -p "Enter Database Name: " DBname
     fi
 }
 
-function Select_DataBase {
-read -p "Enter Database Name: " DBname
-  cd ./data_bases/$DBname 2>>./.error.log
-  if [[ $? == 0 ]]; then
-    echo "Database $DBname was Successfully Selected"
-    tablesMenu
-  else
-    echo "There is no Database called $DBname"
-    mainMenu
-  fi
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #----------------------------------------------------------#
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
