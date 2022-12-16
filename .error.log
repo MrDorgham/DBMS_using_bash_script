@@ -14,3 +14,6 @@ mkdir: cannot create directory ‘DBMS’: File exists
 mkdir: cannot create directory ‘DBMS’: File exists
 mkdir: cannot create directory ‘DBMS’: File exists
 mkdir: cannot create directory ‘DBMS’: File exists
+/home/dorgham/projects/ITI/DBMS/mainDBMS.sh: line 118: cd: ./data_bases/WEQE: No such file or directory
+/home/dorgham/projects/ITI/DBMS/mainDBMS.sh: line 118: cd: ./data_bases/DFSAF: No such file or directory
+/home/dorgham/projects/ITI/DBMS/mainDBMS.sh: line 225: cd: ./data_bases/qw: No such file or directory

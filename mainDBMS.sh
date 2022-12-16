@@ -1,6 +1,21 @@
-#!/bin/bash
+#!/bin/bash 
 shopt -s extglob
 export LC_COLLATE=C
+
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+#----------------------inital start------------------------#
+#create data bases container if it is not exit
+if [ -d data_bases ]
+	then
+	echo -n ""
+else
+    echo -n ""
+	mkdir ./data_bases
+fi
+#----------------------------------------------------------#
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #---------------------icons functions----------------------#
@@ -17,25 +32,25 @@ normal="\033[0m"
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #---------------------icons functions----------------------#
-
-function warning_icon
-{
-	echo -e "$Yellow$1 ⚠️$ENDCOLOR"
-}
-
 function successful_icon
 {
-	echo -e "$Green$1 ✅$ENDCOLOR"
+	echo -e "$Green$1 ✅ $ENDCOLOR"
 }
 
 function fail_icon
 {
-	echo -e "$Red$1 ⛔$ENDCOLOR"
+	echo -e "$Red$1 ⛔ $ENDCOLOR"
 }
+
+function warning_icon
+{
+	echo -e "$Yellow$1 ⚠️ $ENDCOLOR"
+}
+
 
 function info_icon
 {
-	echo -e "$Blue$1 ℹ️$ENDCOLOR"
+	echo -e "$Blue$1 ℹ️ $ENDCOLOR"
 }
 #----------------------------------------------------------#
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
@@ -45,24 +60,24 @@ function info_icon
 #-------------------back bone functions--------------------#
 function Regex_correct
 {
-	if [[ $1 =~ ^[a-zA-Z_]+$ ]] # ^[0-9a-zA-Z_]+$  ^[A-Za-z]+$
+	if [[ $1 =~ ^[A-Za-z][A-Za-z0-9_]*$ ]] # ^[0-9a-zA-Z_]+$  ^[A-Za-z]+$
 	then
 		return 0
 	else    
         echo "$1"
 		fail_icon "Invalid name"
-		info_icon "Database names can't be \"empty\" or cantaining spaces or special characters"
+		info_icon "Database names can't be empty or cantaining spaces or special characters and not starting with numbers"
 		return 1 
 	fi
 }
 
 function w8_clear
 {
-sleep .7
+sleep 0.7
 echo -n "..."
-sleep .7
+sleep 0.7
 echo -n "..."
-sleep .7
+sleep 0.7
 clear
 }
 
@@ -74,7 +89,9 @@ clear
 #-------------------DataBase functions---------------------#
 
 function Create_DataBase(){
-read -p "Enter Database Name: " DBname
+echo "Avilable Databases are: " 
+ls ./data_bases
+read -p "Enter Database Name you want to create : " DBname
     if  Regex_correct "$DBname" ; then
 
         if [ -d ./data_bases/$DBname ]; then
@@ -85,7 +102,7 @@ read -p "Enter Database Name: " DBname
 
         else
 
-            mkdir ./data_bases/$DBname
+            mkdir ./data_bases/$DBname 2>>./.error.log
             w8_clear
             successful_icon "new Database named $DBname has been successfuly created"
             main_Menu
@@ -95,6 +112,129 @@ read -p "Enter Database Name: " DBname
     else
         main_Menu
     fi
+}
+
+function Rename_Databases {
+if [ -z "$(ls -A ./data_bases)" ]; then
+    
+    warning_icon "there is no databases to rename"
+    main_Menu
+
+else
+    echo "Avilable Databases are: " 
+    ls ./data_bases
+    read -p "Enter Database Name you want to rename it  : " old_DBname
+
+    if  Regex_correct "$old_DBname" ; then
+    
+     x=`ls ./data_bases | grep "$old_DBname"` 
+
+        if [ $? -eq 0 ] ; then
+            read -p "Enter the new Database name : " new_DBname
+
+            if Regex_correct "$new_DBname" ; then
+
+                if [ -d ./data_bases/$new_DBname ] ; then
+                    w8_clear
+                 	fail_icon "DB with the same name $new_DBname already exists"
+                    echo " please re-enter a new name.."
+                    Rename_Databases
+                        
+                      
+                else
+                    w8_clear
+                    mv ./data_bases/$old_DBname ./data_bases/$new_DBname
+                    successful_icon "the $new_DBname has been successfuly renamed to $old_DBname"
+                    main_Menu
+
+                fi
+
+            else
+                main_Menu
+            fi
+        
+        else 
+            fail_icon "$old_Name does not exist please try again"
+
+        fi
+        
+    else
+        main_Menu
+    fi
+    
+fi
+
+}
+
+function Drop_Databases {
+if [ -z "$(ls -A ./data_bases)" ]; then
+
+    warning_icon "there is no databases to drop"
+    main_Menu
+
+else
+    echo "Avilable Databases are: " 
+    ls ./data_bases
+    read -p "Enter Database Name you want to Drop it  : " DBname
+
+
+    if [ -d ./data_bases/$DBname ] ; then
+           
+       warning_icon "Are you sure you want to drop $DBname"
+
+       select user_input in 'y' 'n'
+        do
+            case $user_input in
+                'y' )  
+                  
+                  rm -r ./data_bases/$DBname
+                  w8_clear
+                  successful_icon "$DBname was dropped successfully"
+                  main_Menu
+                  break
+                ;;
+                'n' )  
+                  Drop_Databases     
+                  break
+                ;;
+               * )  warning_icon "Choose a Valid Option"
+                ;;
+            esac
+        done 
+                      
+    else
+        fail_icon "$DBname Doesn't exist!"
+        Drop_Databases
+        main_Menu
+    fi
+fi
+
+}
+
+function Connect_DataBase {
+
+    if [ -z "$(ls -A ./data_bases)" ]; then
+
+        warning_icon "there is no databases to connect to"
+        main_Menu
+
+    else
+        echo "Avilable Databases are: " 
+        ls ./data_bases
+        read -p "Enter Database Name you want to select : " DBname
+
+
+        if [ $? -eq 0 ]; then
+            cd ./data_bases/$DBname
+            successful_icon "Database $DBname was Successfully Selected"
+            echo "tablesMenu"
+        else
+            fail_icon "Database $DBname not existed"
+            main_Menu
+        fi
+    
+    fi
+  
 }
 
 #----------------------------------------------------------#
@@ -128,14 +268,13 @@ echo "  \______________________________________________________/ "
   
   case $user_input in
     1 )  Create_DataBase ;;
-    2 )  ls -l ./data_bases ; main_Menu;;
-    3 )  Select_DataBase ;;
-    4 )  rename_DB ;;
-    5 )  drop_DB ;;
+    2 )  ls ./data_bases ; main_Menu;;
+    3 )  Connect_DataBase ;;
+    4 )  Rename_Databases ;;
+    5 )  Drop_Databases ;;
     6 )  exit ;;
     * )  warning_icon "Please select valid pick" ; main_Menu ;
   esac
 
 }
 main_Menu
-
