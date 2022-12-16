@@ -252,27 +252,27 @@ function Drop_Table {
 
     else
         echo "Avilable Tabels are: " 
-        ls ./$DBname
-        read -p "Enter Database Name you want to Drop it  : " DBname
+        ls 
+        read -p "Enter the table Name you want to Drop it  : " TBname
+        pwd
 
+        if [ -f $TBname ] ; then
 
-        if [ -d ./.data_bases/$DBname ] ; then
-
-           warning_icon "Are you sure you want to drop $DBname"
+           warning_icon "Are you sure you want to drop the table named $TBname"
 
            select user_input in 'y' 'n'
             do
                 case $user_input in
                     'y' )  
 
-                      rm -r ./.data_bases/$DBname
+                      rm -r $TBname
                       w8_clear
-                      successful_icon "$DBname was dropped successfully"
-                      main_Menu
+                      successful_icon "$TBname table was dropped successfully"
+                      tables_Menu
                       break
                     ;;
                     'n' )  
-                      Drop_Databases     
+                      tables_Menu     
                       break
                     ;;
                    * )  warning_icon "Choose a Valid Option"
@@ -281,9 +281,9 @@ function Drop_Table {
             done 
 
         else
-            fail_icon "$DBname Doesn't exist!"
-            Drop_Databases
-            main_Menu
+            fail_icon "$TBname table Doesn't exist!"
+            tables_Menu
+            
         fi
     fi
 
