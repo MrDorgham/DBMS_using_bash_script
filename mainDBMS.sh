@@ -350,7 +350,6 @@ function Create_Table {
 
 }
 
-
 function Renam_Table {
     if [ -z "$(ls -A )" ]; then
 
@@ -403,8 +402,6 @@ function Renam_Table {
 
 }
 
-
-
 function Drop_Table {
     if [ -z "$(ls -A )" ]; then
 
@@ -454,22 +451,159 @@ function Drop_Table {
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
 
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+#--------------------Tables functions----------------------#
+function checkPkInsert
+{
+        read -p "enter ($fieldName) of type ($fieldType) : " value
+        ############################
+        ## check empty
+        if [ "$value" ]
+        then
+            echo "nothin">> /dev/null
+            #nothing
+        else 
+            printWarning "please enter a valid value"
+            checkPkInsert
+        fi
+        
+        ###########################
+        ## check data type
+        if [ $fieldType == "int" ]
+            then
+            checkInt "$value"
+            if [ $? != 0 ]
+            then
+            warning_icon "please enter a valid value"
+            checkPkInsert
+            fi
+        fi
+
+        ############################
+        ## check PK constraint
+        checkPK $i "$value"
+        if [ $? != 0 ]
+        then
+            fail_icon "Violation of PK constraint"
+            warning_icon "please enter a valid value"
+            checkPkInsert
+        fi
+}
+
+function checkNormalInsert
+{
+        read -p "enter ($fieldName) of type ($fieldType) : " value
+        ############################
+        ## check empty
+        if [ "$value" ]
+        then
+            echo "nothin">> /dev/null
+            #nothing
+        else 
+            warning_icon "please enter a valid value"
+            checkNormalInsert
+        fi
+        
+        ###########################
+        ## check data type
+        if [ $fieldType == "int" ]
+            then
+            checkInt "$value"
+            if [ $? != 0 ]
+            then
+            warning_icon "please enter a valid value"
+            checkNormalInsert
+            fi
+        fi
+}
+
+function insertField {
+      if [ $i -eq $COLNumber ]
+                then
+                echo $1 >> $TBName
+            else
+                echo -n $1":" >> $TBName
+      fi
+}
+
+function checkInt {
+    expr $1 + 1 2> /dev/null >> /dev/null
+}
+
+function checkPK {
+   if `cut -f$1 -d: $TBName | grep -w $2 >> /dev/null 2>/dev/null`
+        then
+        return 1
+    else
+        return 0
+    fi 
+}
+
+function Insert_Into_Table {
+
+        echo "Avilable tables are: " 
+        ls 
+        read -p "please enter table name : " TBName
+
+        if [ $TBName ]
+        then
+            if [ -a $TBName ]
+                then
+                COLNumber=`awk -F: 'NR==1 {print NF}' $TBName`
+
+                for (( i=1; i <= $COLNumber; i++ ))
+                do
+                    ##############################
+                    ## inserting primary key field
+                    if  Test_P_Key=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
+                        then 
+                        fieldName=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
+                        fieldType=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f4 `
+                        info_icon "this is primary key it must be uniqe"
+
+                        checkPkInsert
+                        insertField "$value"
+
+
+                    #########################    
+                    ## inserting normal field
+                    else
+                        fieldName=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
+                        fieldType=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
+
+                        checkNormalInsert
+                        insertField "$value"
+                    fi
+                done
+            else
+                fail_icon "Table $tableName doesn't exist"
+            fi
+        else
+            fail_icon "Invalid input please enter a valid name"
+        fi
+
+}
+
+
+
+#----------------------------------------------------------#
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
 
 function tables_Menu() {
-echo "   ________________[Tables creation Menu]________________  "
-echo "  /                                                      \ "
-echo "  @   1. Show Existing Tables                            @ "
-echo "  @   2. Create New Table                                @ "
-echo "  @   3. Rename Tables                                   @ "
-echo "  @   4. Drop Table                                      @ "
-echo "  @   5. Insert Into Table                               @ "
-echo "  @   6. Select From Table                               @ "
-echo "  @   7. Update From Table                               @ "
-echo "  @   8. Delete From Table                               @ "
-echo "  @   9. Back to the main menu                           @ "
-echo "  @   10. Exit                                           @ "
-echo "  \______________________________________________________/ "
+echo "   ________________[Tables creation Menu]________________   "
+echo "  /                                                      \  "
+echo "  @   1->  Show Existing Tables                           @ "
+echo "  @   2->  Create New Table                               @ "
+echo "  @   3->  Rename Tables                                  @ "
+echo "  @   4->  Drop Table                                     @ "
+echo "  @   5->  Insert Into Table                              @ "
+echo "  @   6->  Select From Table                              @ "
+echo "  @   7->  Update From Table                              @ "
+echo "  @   8->  Delete From Table                              @ "
+echo "  @   9->  Back to the main menu                          @ "
+echo "  @   10-> Exit                                           @ "
+echo "  \______________________________________________________/  "
   
   echo  
   read -p "Select option: "  user_input
@@ -501,12 +635,12 @@ echo "  @   Hey, Welcome To DBMS using bash script,            @ "
 echo "  @   this is the Main Menu... pleas select one of       @ "
 echo "  @   the options below.                                 @ "
 echo "  @                                                      @ "
-echo "  @   1. Create Database                                 @ "
-echo "  @   2. Lsit Databases                                  @ "
-echo "  @   3. Select Databases                                @ "
-echo "  @   4. Rename Databases                                @ "
-echo "  @   5. Drop Databases                                  @ "
-echo "  @   6. Exit                                            @ "
+echo "  @   1-> Create Database                                @ "
+echo "  @   2-> Lsit Databases                                 @ "
+echo "  @   3-> Select Databases                               @ "
+echo "  @   4-> Rename Databases                               @ "
+echo "  @   5-> Drop Databases                                 @ "
+echo "  @   6-> Exit                                           @ "
 echo "  \______________________________________________________/ "
   
   echo  
