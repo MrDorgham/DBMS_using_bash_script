@@ -454,7 +454,7 @@ function Drop_Table {
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #-----------------Tables functions checks1-----------------#
 
-function checkPkInsert
+function check_Pkey_Insert
 {
         read -p "enter ($fieldName) of type ($fieldType) : " value
         ############################
@@ -465,7 +465,7 @@ function checkPkInsert
             #nothing
         else 
             warning_icon "please enter a valid value"
-            checkPkInsert
+            check_Pkey_Insert
         fi
         
         ###########################
@@ -476,7 +476,7 @@ function checkPkInsert
             if [ $? != 0 ]
             then
             warning_icon "please enter a valid value"
-            checkPkInsert
+            check_Pkey_Insert
             fi
         fi
 
@@ -487,11 +487,11 @@ function checkPkInsert
         then
             fail_icon "Violation of PK constraint"
             warning_icon "please enter a valid value"
-            checkPkInsert
+            check_Pkey_Insert
         fi
 }
 
-function checkNormalInsert
+function check_Non_Pkey_Insert
 {
         read -p "enter ($fieldName) of type ($fieldType) : " value
         ############################
@@ -502,7 +502,7 @@ function checkNormalInsert
             #nothing
         else 
             warning_icon "please enter a valid value"
-            checkNormalInsert
+            check_Non_Pkey_Insert
         fi
         
         ###########################
@@ -513,20 +513,20 @@ function checkNormalInsert
             if [ $? != 0 ]
             then
             warning_icon "please enter a valid value"
-            checkNormalInsert
+            check_Non_Pkey_Insert
             fi
         fi
 }
 
-# function checkPK 
-# {
-#    if `cut -f$1 -d: $TBName | grep -w $2 >> /dev/null 2>/dev/null`
-#         then
-#         return 1
-#     else
-#         return 0
-#     fi 
-# }
+function checkPK 
+{
+   if `cut -f$1 -d: $TBName | grep -w $2 >> /dev/null 2>/dev/null`
+        then
+        return 1
+    else
+        return 0
+    fi 
+}
 
 function insertField 
 {
@@ -536,6 +536,7 @@ function insertField
             else
                 echo -n $1":" >> $TBName
       fi
+
 }
 
 function checkInt 
@@ -550,9 +551,9 @@ function checkCondition
     
     #####################################
     ## check data type of condition value
-    read -p "enter (${coloumnsNames[conditionIndex]}) of type (${coloumnsTypes[conditionIndex]}) : " conditionValue
+    read -p "enter (${COLs_Names[Con_Index]}) of type (${COLs_Types[Con_Index]}) : " Con_Value
     
-    if [ "$conditionValue" ]
+    if [ "$Con_Value" ]
     then
         echo "nothin">> /dev/null
         #nothing
@@ -562,9 +563,9 @@ function checkCondition
     fi
 
     
-    if [ ${coloumnsTypes[conditionIndex]} == "int" ]
+    if [ ${COLs_Types[Con_Index]} == "int" ]
         then
-        checkInt $conditionValue
+        checkInt $Con_Value
         if [ $? != 0 ]
         then
             printWarning "Please enter a valid value"
@@ -578,7 +579,7 @@ function checkUpdate
 {
     ##############################################
     ## check data type of new value
-    read -p "Enter new value for (${coloumnsNames[coloumnIndex]}) of type (${coloumnsTypes[coloumnIndex]}) : " newValue
+    read -p "Enter new value for (${COLs_Names[COL_Index]}) of type (${COLs_Types[COL_Index]}) : " newValue
     
     if [ "$newValue" ]
     then
@@ -590,7 +591,7 @@ function checkUpdate
     fi
 
     
-    if [ ${coloumnsTypes[coloumnIndex]} == "int" ]
+    if [ ${COLs_Types[COL_Index]} == "int" ]
         then
         checkInt $newValue
         if [ $? != 0 ]
@@ -603,9 +604,9 @@ function checkUpdate
     ####################
     ## check if he update pk
 
-    if testPK=`grep "%:" ./data_bases/$dbname/$tableName | cut -d ":" -f$coloumnIndex | grep "%PK%" ` 
+    if testPK=`grep "%:" ./data_bases/$dbname/$tableName | cut -d ":" -f$COL_Index | grep "%PK%" ` 
     then
-        checkPK $coloumnIndex "$newValue"
+        checkPK $COL_Index "$newValue"
         while [ $? != 0 ]
         do
             printFailure "Violation of PK constraint"
@@ -644,7 +645,7 @@ function Insert_Into_Table {
                         fieldType=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f4 `
                         info_icon "this is primary key it must be uniqe"
 
-                        checkPkInsert
+                        check_Pkey_Insert
                         insertField "$value"
 
 
@@ -654,14 +655,16 @@ function Insert_Into_Table {
                         fieldName=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
                         fieldType=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
 
-                        check_Non_Pkay_Insert
+                        check_Non_Pkey_Insert
                         insertField "$value"
 
 
                     
                     
                     fi
+                
                 done
+             tables_Menu   
             else
                 fail_icon "Table $TBName doesn't exist"
                 Insert_Into_Table
@@ -687,13 +690,13 @@ function Delete_From_Table {
                 do
                     
                     ## this if condition because cut in case of pk is different
-                    if testPK=`grep "%:" $TBName | cut -d ":" -f$i | grep "%PK%" ` 
+                    if testPK=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
                     then
-                        coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
-                        coloumnsTypes[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f4 `
+                        COLs_Names[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
+                        COLs_Types[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f4 `
                     else
-                        coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
-                        coloumnsTypes[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
+                        COLs_Names[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
+                        COLs_Types[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
                     fi
                 done
 
@@ -704,36 +707,36 @@ function Delete_From_Table {
                 ## read condition   
                 for (( i=1; i <= $COLNumber; i++ ))
                 do
-                    echo $i"-" ${coloumnsNames[i]} "("${coloumnsTypes[i]}")"
+                    echo $i"-" ${COLs_Names[i]} "("${COLs_Types[i]}")"
                 done
 
                 
                 ## check if condition index is a number 
-                read -p "condition on which coloumn number : " conditionIndex 
-                checkInt $conditionIndex
-                while [[ $? -ne 0 || $conditionIndex -le 0 || $conditionIndex -gt $COLNumber ]]
+                read -p "condition on which coloumn number : " Con_Index 
+                checkInt $Con_Index
+                while [[ $? -ne 0 || $Con_Index -le 0 || $Con_Index -gt $COLNumber ]]
                 do
                     warning_icon "please enter a valid option"
-                    read -p "condition on which coloumn number : " conditionIndex 
-                    checkInt $conditionIndex
+                    read -p "condition on which coloumn number : " Con_Index 
+                    checkInt $Con_Index
                 done 
 
 
                 ## check data type of condition value
-                read -p "condtion value of type (${coloumnsTypes[conditionIndex]}) to delete at: " conditionValue;
-                if [ ${coloumnsTypes[conditionIndex]} == "int" ]
+                read -p "condtion value of type (${COLs_Types[Con_Index]}) to delete at: " Con_Value;
+                if [ ${COLs_Types[Con_Index]} == "int" ]
                     then
-                    checkInt $conditionValue
+                    checkInt $Con_Value
                     while [ $? != 0 ]
                     do
                         warning_icon "please enter a valid value"
-                        read -p "enter (${coloumnsNames[conditionIndex]}) of type (${coloumnsTypes[conditionIndex]}) : " conditionValue
-                        checkInt $conditionValue
+                        read -p "enter (${COLs_Names[Con_Index]}) of type (${COLs_Types[Con_Index]}) : " Con_Value
+                        checkInt $Con_Value
                     done
                 fi
 
                 ## to delete from table
-                awk -F:  ' $"'$conditionIndex'"!="'$conditionValue'" {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
+                awk -F:  ' $"'$Con_Index'"!="'$Con_Value'" {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
                 if [ -a ./.tmp ]
                 then
                     cat ./.tmp > $TBName;
@@ -774,31 +777,31 @@ function Update_From_Table {
                 ## this if condition because cut in case of pk is different
                 if testPK=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
                 then
-                    coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
-                    coloumnsTypes[$i]=`grep "%:" $TBName| cut -d ":" -f$i | cut -d "%" -f4 `
+                    COLs_Names[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
+                    COLs_Types[$i]=`grep "%:" $TBName| cut -d ":" -f$i | cut -d "%" -f4 `
                 else
-                    coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
-                    coloumnsTypes[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
+                    COLs_Names[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
+                    COLs_Types[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
                 fi
             done
             
             echo "table columns are : "
             for (( i=1; i <= $COLNumber; i++ ))
             do
-                echo $i"-" ${coloumnsNames[i]} "("${coloumnsTypes[i]}")"
+                echo $i"-" ${COLs_Names[i]} "("${COLs_Types[i]}")"
             done
             
     
             ###############################################
             ## get index of the coloumn he wanted to update
-            read -p "Enter column number you want to update : " coloumnIndex 
-            checkInt $coloumnIndex
-            while [[ $? -ne 0 || $coloumnIndex -le 0 || $coloumnIndex -gt $COLNumber ]]
+            read -p "Enter column number you want to update : " COL_Index 
+            checkInt $COL_Index
+            while [[ $? -ne 0 || $COL_Index -le 0 || $COL_Index -gt $COLNumber ]]
             do
                 fail_icon "Please enter a valid value"
                 info_icon "Ener value in between 1 and $COLNumber"
-                read -p "Enter column number you want to update : " coloumnIndex 
-                checkInt $coloumnIndex
+                read -p "Enter column number you want to update : " COL_Index 
+                checkInt $COL_Index
             done 
     
             checkUpdate
@@ -807,33 +810,33 @@ function Update_From_Table {
             ## read condition   
             for (( i=1; i <= $COLNumber; i++ ))
             do
-                echo $i"-" ${coloumnsNames[i]} "("${coloumnsTypes[i]}")"
+                echo $i"-" ${COLs_Names[i]} "("${COLs_Types[i]}")"
             done
     
             ############################
             ## check if condition index is a number 
-            read -p "condition on which coloumn number : " conditionIndex 
-            checkInt $conditionIndex
-            while [[ $? -ne 0 || $conditionIndex -le 0 || $conditionIndex -gt $COLNumber ]]
+            read -p "condition on which coloumn number : " Con_Index 
+            checkInt $Con_Index
+            while [[ $? -ne 0 || $Con_Index -le 0 || $Con_Index -gt $COLNumber ]]
             do
                 printWarning "Please enter a valid value"
                 printInfo "ener value in between 1 and $COLNumber"
-                read -p "condition on which coloumn number : " conditionIndex 
-                checkInt $conditionIndex
+                read -p "condition on which coloumn number : " Con_Index 
+                checkInt $Con_Index
             done 
     
     
             checkCondition
             ############################### ci=2 && cvalue=hsn >>> $2==hsn && 3=>23 >>>> $3=23
             ## to update table 
-            awk -F:  '( NR!=1 && $"'$conditionIndex'"=="'"${conditionValue}"'" ) {$"'$coloumnIndex'"="'"${newValue}"'"} {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
+            awk -F:  '( NR!=1 && $"'$Con_Index'"=="'"${Con_Value}"'" ) {$"'$COL_Index'"="'"${newValue}"'"} {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
             
     
             #####################################
             ## to prevent update if it violate pk
-            if testPK=`grep "%:" $TBName | cut -d ":" -f$coloumnIndex | grep "%PK%" ` 
+            if testPK=`grep "%:" $TBName | cut -d ":" -f$COL_Index | grep "%P_Key%" ` 
             then 
-                x=`cat ./.tmp1 | cut -f$coloumnIndex -d:| grep -w "$newValue"|wc -l | cut -f1 -d" "`
+                x=`cat ./.tmp1 | cut -f$COL_Index -d:| grep -w "$newValue"|wc -l | cut -f1 -d" "`
                 if [ $x -gt 1 ]
                 then
                     fail_icon "Update fail due to PK constraint violation"
