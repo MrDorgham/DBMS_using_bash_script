@@ -96,7 +96,7 @@ function Create_DataBase(){
         if [ -d ./.data_bases/$DBname ]; then
 		    fail_icon "DB with the name $DBname already exists"
             echo " please re-enter a new name.."
-            main_Menu
+            Create_DataBase
             
 
         else
@@ -224,13 +224,13 @@ function Connect_DataBase {
         read -p "Enter Database Name you want to select : " DBname
 
 
-        if [ $? -eq 0 ]; then
+        if [ -d ./.data_bases/$DBname ]; then
             cd ./.data_bases/$DBname
             successful_icon "Database $DBname was Successfully Selected"
             tables_Menu
         else
             fail_icon "Database $DBname not existed"
-            main_Menu
+            Connect_DataBase
         fi
     
     fi
@@ -270,7 +270,7 @@ function Create_Table {
                 do
                     warning_icon "Please enter a valid number"
                     read -p "Enter the number of coloumns : " COLNumber
-                    expr $COLNumber + 1 2> /dev/null >> /dev/null
+                    expr $COLNumber + 1 2> /dev/null 
 
                 done
 
@@ -281,7 +281,7 @@ function Create_Table {
                     ## gen name of field
                     read -p "Enter the name of column number $i: " COLName;
 
-                    while [ -z "$COLNumber" ]; do
+                    while [ -z "$COLName" ]; do
 
                         warning_icon "Field name can't be empty";
                         read -p "Enter the name of column number $i: " COLName;
@@ -452,7 +452,8 @@ function Drop_Table {
 
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
-#--------------------Tables functions----------------------#
+#-----------------Tables functions checks1-----------------#
+
 function checkPkInsert
 {
         read -p "enter ($fieldName) of type ($fieldType) : " value
@@ -463,7 +464,7 @@ function checkPkInsert
             echo "nothin">> /dev/null
             #nothing
         else 
-            printWarning "please enter a valid value"
+            warning_icon "please enter a valid value"
             checkPkInsert
         fi
         
@@ -517,7 +518,18 @@ function checkNormalInsert
         fi
 }
 
-function insertField {
+# function checkPK 
+# {
+#    if `cut -f$1 -d: $TBName | grep -w $2 >> /dev/null 2>/dev/null`
+#         then
+#         return 1
+#     else
+#         return 0
+#     fi 
+# }
+
+function insertField 
+{
       if [ $i -eq $COLNumber ]
                 then
                 echo $1 >> $TBName
@@ -526,18 +538,89 @@ function insertField {
       fi
 }
 
-function checkInt {
+function checkInt 
+{
     expr $1 + 1 2> /dev/null >> /dev/null
 }
 
-function checkPK {
-   if `cut -f$1 -d: $TBName | grep -w $2 >> /dev/null 2>/dev/null`
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+#-----------------Tables functions checks2-----------------#
+function checkCondition
+{
+    
+    #####################################
+    ## check data type of condition value
+    read -p "enter (${coloumnsNames[conditionIndex]}) of type (${coloumnsTypes[conditionIndex]}) : " conditionValue
+    
+    if [ "$conditionValue" ]
+    then
+        echo "nothin">> /dev/null
+        #nothing
+    else 
+        printWarning "please enter a valid value"
+        checkCondition
+    fi
+
+    
+    if [ ${coloumnsTypes[conditionIndex]} == "int" ]
         then
-        return 1
-    else
-        return 0
-    fi 
+        checkInt $conditionValue
+        if [ $? != 0 ]
+        then
+            printWarning "Please enter a valid value"
+            printInfo "Enter only numbers"
+            checkCondition
+        fi
+    fi
 }
+
+function checkUpdate
+{
+    ##############################################
+    ## check data type of new value
+    read -p "Enter new value for (${coloumnsNames[coloumnIndex]}) of type (${coloumnsTypes[coloumnIndex]}) : " newValue
+    
+    if [ "$newValue" ]
+    then
+        echo "nothin">> /dev/null
+        #nothing
+    else 
+        printWarning "please enter a valid value"
+        checkUpdate
+    fi
+
+    
+    if [ ${coloumnsTypes[coloumnIndex]} == "int" ]
+        then
+        checkInt $newValue
+        if [ $? != 0 ]
+        then
+            printFailure "Please enter a valid value"
+            printInfo "Enter only numbers"
+            checkUpdate
+        fi
+    fi
+    ####################
+    ## check if he update pk
+
+    if testPK=`grep "%:" ./data_bases/$dbname/$tableName | cut -d ":" -f$coloumnIndex | grep "%PK%" ` 
+    then
+        checkPK $coloumnIndex "$newValue"
+        while [ $? != 0 ]
+        do
+            printFailure "Violation of PK constraint"
+            printWarning "Please enter a valid value"
+            checkUpdate
+        done
+    fi
+}
+#----------------------------------------------------------#
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+
+
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+#---------------Tables creation functions------------------#
 
 function Insert_Into_Table {
 
@@ -549,11 +632,11 @@ function Insert_Into_Table {
         then
             if [ -a $TBName ]
                 then
-                COLNumber=`awk -F: 'NR==1 {print NF}' $TBName`
+                COLNumber=`awk -F: 'NR==1 {print NF}' $TBName` #-> get the column numbers
 
                 for (( i=1; i <= $COLNumber; i++ ))
                 do
-                    ##############################
+                    
                     ## inserting primary key field
                     if  Test_P_Key=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
                         then 
@@ -565,29 +648,278 @@ function Insert_Into_Table {
                         insertField "$value"
 
 
-                    #########################    
+                        
                     ## inserting normal field
                     else
                         fieldName=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
                         fieldType=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
 
-                        checkNormalInsert
+                        check_Non_Pkay_Insert
                         insertField "$value"
+
+
+                    
+                    
                     fi
                 done
             else
-                fail_icon "Table $tableName doesn't exist"
+                fail_icon "Table $TBName doesn't exist"
+                Insert_Into_Table
             fi
         else
             fail_icon "Invalid input please enter a valid name"
+            Insert_Into_Table
         fi
 
 }
 
+function Delete_From_Table {
+    echo "Avilable tables are: " 
+    ls 
+    read -p "Enter table name to delete from: " TBName
 
+    if [ $TBName ]
+    then
+        if [ -a $TBName ]
+            then
+            COLNumber=`awk -F: 'NR==1 {print NF}' $TBName`
+                for (( i=1; i <= $COLNumber; i++ ))
+                do
+                    
+                    ## this if condition because cut in case of pk is different
+                    if testPK=`grep "%:" $TBName | cut -d ":" -f$i | grep "%PK%" ` 
+                    then
+                        coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
+                        coloumnsTypes[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f4 `
+                    else
+                        coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
+                        coloumnsTypes[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
+                    fi
+                done
+
+
+
+
+                
+                ## read condition   
+                for (( i=1; i <= $COLNumber; i++ ))
+                do
+                    echo $i"-" ${coloumnsNames[i]} "("${coloumnsTypes[i]}")"
+                done
+
+                
+                ## check if condition index is a number 
+                read -p "condition on which coloumn number : " conditionIndex 
+                checkInt $conditionIndex
+                while [[ $? -ne 0 || $conditionIndex -le 0 || $conditionIndex -gt $COLNumber ]]
+                do
+                    warning_icon "please enter a valid option"
+                    read -p "condition on which coloumn number : " conditionIndex 
+                    checkInt $conditionIndex
+                done 
+
+
+                ## check data type of condition value
+                read -p "condtion value of type (${coloumnsTypes[conditionIndex]}) to delete at: " conditionValue;
+                if [ ${coloumnsTypes[conditionIndex]} == "int" ]
+                    then
+                    checkInt $conditionValue
+                    while [ $? != 0 ]
+                    do
+                        warning_icon "please enter a valid value"
+                        read -p "enter (${coloumnsNames[conditionIndex]}) of type (${coloumnsTypes[conditionIndex]}) : " conditionValue
+                        checkInt $conditionValue
+                    done
+                fi
+
+                ## to delete from table
+                awk -F:  ' $"'$conditionIndex'"!="'$conditionValue'" {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
+                if [ -a ./.tmp ]
+                then
+                    cat ./.tmp > $TBName;
+                    rm ./.tmp;
+                    successful_icon "Record deleted successfully"
+                    tables_Menu
+                fi
+
+        else
+            fail_icon "$TBName Doesn't exist"
+            tables_Menu
+        fi
+    else
+      fail_icon "invalid input please enter a valid name"
+      tables_Menu
+    fi
+
+
+
+}
+
+function Update_From_Table {
+    
+        echo "Avilable tables are: " 
+        ls 
+        read -p "Enter table name to update from: " TBName
+    
+    if [ $TBName ]
+    then
+        if [ -a $TBName ]
+        then
+        COLNumber=`awk -F: 'NR==1 {print NF}' $TBName`
+           
+            ## to read all column names and data types
+            for (( i=1; i <= $COLNumber; i++ ))
+            do
+                #######################    
+                ## this if condition because cut in case of pk is different
+                if testPK=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
+                then
+                    coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
+                    coloumnsTypes[$i]=`grep "%:" $TBName| cut -d ":" -f$i | cut -d "%" -f4 `
+                else
+                    coloumnsNames[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
+                    coloumnsTypes[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
+                fi
+            done
+            
+            echo "table columns are : "
+            for (( i=1; i <= $COLNumber; i++ ))
+            do
+                echo $i"-" ${coloumnsNames[i]} "("${coloumnsTypes[i]}")"
+            done
+            
+    
+            ###############################################
+            ## get index of the coloumn he wanted to update
+            read -p "Enter column number you want to update : " coloumnIndex 
+            checkInt $coloumnIndex
+            while [[ $? -ne 0 || $coloumnIndex -le 0 || $coloumnIndex -gt $COLNumber ]]
+            do
+                fail_icon "Please enter a valid value"
+                info_icon "Ener value in between 1 and $COLNumber"
+                read -p "Enter column number you want to update : " coloumnIndex 
+                checkInt $coloumnIndex
+            done 
+    
+            checkUpdate
+    
+            ################################
+            ## read condition   
+            for (( i=1; i <= $COLNumber; i++ ))
+            do
+                echo $i"-" ${coloumnsNames[i]} "("${coloumnsTypes[i]}")"
+            done
+    
+            ############################
+            ## check if condition index is a number 
+            read -p "condition on which coloumn number : " conditionIndex 
+            checkInt $conditionIndex
+            while [[ $? -ne 0 || $conditionIndex -le 0 || $conditionIndex -gt $COLNumber ]]
+            do
+                printWarning "Please enter a valid value"
+                printInfo "ener value in between 1 and $COLNumber"
+                read -p "condition on which coloumn number : " conditionIndex 
+                checkInt $conditionIndex
+            done 
+    
+    
+            checkCondition
+            ############################### ci=2 && cvalue=hsn >>> $2==hsn && 3=>23 >>>> $3=23
+            ## to update table 
+            awk -F:  '( NR!=1 && $"'$conditionIndex'"=="'"${conditionValue}"'" ) {$"'$coloumnIndex'"="'"${newValue}"'"} {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
+            
+    
+            #####################################
+            ## to prevent update if it violate pk
+            if testPK=`grep "%:" $TBName | cut -d ":" -f$coloumnIndex | grep "%PK%" ` 
+            then 
+                x=`cat ./.tmp1 | cut -f$coloumnIndex -d:| grep -w "$newValue"|wc -l | cut -f1 -d" "`
+                if [ $x -gt 1 ]
+                then
+                    fail_icon "Update fail due to PK constraint violation"
+                     rm ./.tmp1;
+                fi   
+            fi
+            
+            if [ -a ./.tmp1 ]
+            then
+                cat ./.tmp1 > $TBName;
+                rm ./.tmp1;
+                successful_icon "Update successfull"
+            fi
+        else
+            fail_icon "Table $TBName doesn't exist"
+        fi
+    else
+        fail_icon "Invalid input please enter a valid name"
+    fi
+
+
+}
 
 #----------------------------------------------------------#
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+
+
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+#---------------Tables selection functions-----------------#
+
+function select_All {
+    
+    echo "Avilable tables are: " 
+    ls 
+    read -p "Enter table name you want to select from: " TBName
+
+  column -t -s '|' $TBName 2>>./.error.log
+  if [[ $? != 0 ]]
+  then
+    echo "Error Displaying Table $TBName"
+  fi
+  select_Menu
+
+}
+
+function select_Col {
+    echo "Avilable tables are: " 
+    ls
+    read -p "Enter table name you want select from : " TBName
+    sed '2d' $TBName | sed -n 's/%//gp'| sed -n 's/int//gp'|sed -n 's/string//gp'|sed -n 's/:/ | /gp'
+    read -p "Enter the number of coulmn you want display : " colNum
+    awk 'BEGIN{FS=":"}{print $'$colNum'}' $TBName
+    select_Menu
+}
+#----------------------------------------------------------#
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+
+
+
+
+
+function select_Menu {
+echo "   _____________________[Select Menu]____________________   "
+echo "  /                                                      \  "
+echo "  @   1->  Select All Columns of a Table                  @ "
+echo "  @   2->  Select Specific Column from a Table            @ "
+echo "  @   3->  Back To Tables Menu                            @ "
+echo "  @   4->  Back To Main Menu                              @ "
+echo "  @   5->  Exit                                           @ "
+echo "  \______________________________________________________/  "
+  
+  echo  
+  read -p "Select option: "  user_input
+  
+  case $user_input in
+    1 )  select_All ;;
+    2 )  select_Col ;;
+    3 )  tables_Menu ;;
+    4 )  main_Menu ;;
+    5 )  exit ;;
+    * )  warning_icon "Please select valid pick" ; select_Menu ;
+  esac
+
+    
+}
 
 
 function tables_Menu() {
@@ -614,7 +946,7 @@ echo "  \______________________________________________________/  "
     3 )  Renam_Table ;;
     4 )  Drop_Table ;;
     5 )  Insert_Into_Table ;;
-    6 )  Select_From_Table ;;
+    6 )  select_Menu ;;
     7 )  Update_From_Table ;;
     8 )  Delete_From_Table ;;
     9 )  main_Menu ;;
@@ -637,7 +969,7 @@ echo "  @   the options below.                                 @ "
 echo "  @                                                      @ "
 echo "  @   1-> Create Database                                @ "
 echo "  @   2-> Lsit Databases                                 @ "
-echo "  @   3-> Select Databases                               @ "
+echo "  @   3-> Connect Databases                              @ "
 echo "  @   4-> Rename Databases                               @ "
 echo "  @   5-> Drop Databases                                 @ "
 echo "  @   6-> Exit                                           @ "
