@@ -59,7 +59,7 @@ function info_icon
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #-------------------back bone functions--------------------#
-function Regex_correct {
+function Regex_correct { # check for regex
 	if [[ $1 =~ ^[A-Za-z][A-Za-z0-9_]*$ ]] # ^[0-9a-zA-Z_]+$  ^[A-Za-z]+$
 	then
 		return 0
@@ -71,7 +71,7 @@ function Regex_correct {
 	fi
 }
 
-function w8_clear {
+function w8_clear { # user exp and clear
     sleep 0.7
     echo -n "..."
     sleep 0.7
@@ -240,8 +240,6 @@ function Connect_DataBase {
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
 
-
-
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #--------------------Tables functions----------------------#
 
@@ -270,7 +268,7 @@ function Create_Table {
                 do
                     warning_icon "Please enter a valid number"
                     read -p "Enter the number of coloumns : " COLNumber
-                    expr $COLNumber + 1 2> /dev/null 
+                    expr $COLNumber + 1 2> /dev/null # dev/null in Linux is a null device file. This will discard anything written to it, and will return EOF on reading
 
                 done
 
@@ -310,6 +308,7 @@ function Create_Table {
                         done 
                         break
                     done
+
 
                     ## get datatype of field
                     read -p "Enter a valid column $i datatype : [string/int] " data_Type;
@@ -380,7 +379,7 @@ function Renam_Table {
                     else
                         w8_clear
                         mv $old_TBname $new_TBname
-                        successful_icon "the $new_TBname has been successfuly renamed to $old_TBname"
+                        successful_icon "the $old_TBname has been successfuly renamed to $new_TBname"
                         tables_Menu
 
                     fi
@@ -453,6 +452,10 @@ function Drop_Table {
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #-----------------Tables functions checks1-----------------#
+function checkInt 
+{
+    expr $1 + 1 2> /dev/null >> /dev/null
+}
 
 function check_Pkey_Insert
 {
@@ -539,10 +542,8 @@ function insertField
 
 }
 
-function checkInt 
-{
-    expr $1 + 1 2> /dev/null >> /dev/null
-}
+#----------------------------------------------------------#
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #-----------------Tables functions checks2-----------------#
