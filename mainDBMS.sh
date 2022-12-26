@@ -604,7 +604,7 @@ function checkUpdate
     ####################
     ## check if he update pk
 
-    if testPK=`grep "%:" ./data_bases/$dbname/$tableName | cut -d ":" -f$COL_Index | grep "%PK%" ` 
+    if Test_P_Key=`grep "%:" ./data_bases/$DBname/$TBName | cut -d ":" -f$COL_Index | grep "%P_Key%" ` 
     then
         checkPK $COL_Index "$newValue"
         while [ $? != 0 ]
@@ -657,9 +657,6 @@ function Insert_Into_Table {
 
                         check_Non_Pkey_Insert
                         insertField "$value"
-
-
-                    
                     
                     fi
                 
@@ -690,7 +687,7 @@ function Delete_From_Table {
                 do
                     
                     ## this if condition because cut in case of pk is different
-                    if testPK=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
+                    if Test_P_Key=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
                     then
                         COLs_Names[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
                         COLs_Types[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f4 `
@@ -699,10 +696,6 @@ function Delete_From_Table {
                         COLs_Types[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
                     fi
                 done
-
-
-
-
                 
                 ## read condition   
                 for (( i=1; i <= $COLNumber; i++ ))
