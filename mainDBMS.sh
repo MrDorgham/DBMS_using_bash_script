@@ -534,7 +534,6 @@ function check_Non_Pkey_Insert
 }
 
 
-
 function insertField 
 {
       if [ $i -eq $COLNumber ]
@@ -548,83 +547,6 @@ function insertField
 
 #----------------------------------------------------------#
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
-
-
-
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
-#-----------------Tables functions checks2-----------------#
-function checkCondition
-{
-    
-    #####################################
-    ## check data type of condition value
-    read -p "enter (${COLs_Names[Con_Index]}) of type (${COLs_Types[Con_Index]}) : " Con_Value
-    
-    if [ "$Con_Value" ]
-    then
-        echo "nothin">> /dev/null
-        #nothing
-    else 
-        warning_icon "please enter a valid value"
-        checkCondition
-    fi
-
-    
-    if [ ${COLs_Types[Con_Index]} == "int" ]
-        then
-        checkInt $Con_Value
-        if [ $? != 0 ]
-        then
-            warning_icon "Please enter a valid value"
-            info_icon "Enter only numbers"
-            checkCondition
-        fi
-    fi
-}
-
-function checkUpdate
-{
-    ##############################################
-    ## check data type of new value
-    read -p "Enter new value for (${COLs_Names[COL_Index]}) of type (${COLs_Types[COL_Index]}) : " newValue
-    
-    if [ "$newValue" ]
-    then
-        echo "nothin">> /dev/null
-        #nothing
-    else 
-        warning_icon "please enter a valid value"
-        checkUpdate
-    fi
-
-    
-    if [ ${COLs_Types[COL_Index]} == "int" ]
-        then
-        checkInt $newValue
-        if [ $? != 0 ]
-        then
-            fail_icon "Please enter a valid value"
-            info_icon "Enter only numbers"
-            checkUpdate
-        fi
-    fi
-    ####################
-    ## check if he update pk
-    pwd
-    if Test_P_Key=`grep "%:" $TBName | cut -d ":" -f$COL_Index | grep "%P_Key%" ` 
-    then
-        checkPK $COL_Index "$newValue"
-        while [ $? != 0 ]
-        do
-            fail_icon "Violation of PK constraint"
-            warning_icon "Please enter a valid value"
-            checkUpdate
-        done
-    fi
-}
-#----------------------------------------------------------#
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
-
 
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
@@ -758,96 +680,6 @@ function Delete_From_Table {
 
 }
 
-function Update_From_Table {
-    
-        echo "Avilable tables are: " 
-        ls 
-        read -p "Enter table name to update from: " TBName
-    
-    if [ $TBName ]
-    then
-        if [ -a $TBName ]
-        then
-        COLNumber=`awk -F: 'NR==1 {print NF}' $TBName`
-           
-            ## to read all column names and data types
-            for (( i=1; i <= $COLNumber; i++ ))
-            do
-                #######################    
-                ## this if condition because cut in case of pk is different
-                if testPK=`grep "%:" $TBName | cut -d ":" -f$i | grep "%P_Key%" ` 
-                then
-                    COLs_Names[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f3 `
-                    COLs_Types[$i]=`grep "%:" $TBName| cut -d ":" -f$i | cut -d "%" -f4 `
-                else
-                    COLs_Names[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f1 `
-                    COLs_Types[$i]=`grep "%:" $TBName | cut -d ":" -f$i | cut -d "%" -f2 `
-                fi
-            done
-            
-            echo "table columns are : "
-            for (( i=1; i <= $COLNumber; i++ ))
-            do
-                echo $i"-" ${COLs_Names[i]} "("${COLs_Types[i]}")"
-            done
-            
-    
-            ###############################################
-            ## get index of the coloumn he wanted to update
-            read -p "Enter column number you want to update : " COL_Index 
-            checkInt $COL_Index
-            while [[ $? -ne 0 || $COL_Index -le 0 || $COL_Index -gt $COLNumber ]]
-            do
-                fail_icon "Please enter a valid value"
-                info_icon "Ener value in between 1 and $COLNumber"
-                read -p "Enter column number you want to update : " COL_Index 
-                checkInt $COL_Index
-            done 
-    
-            checkUpdate
-    
-            ################################
-            ## read condition   
-            for (( i=1; i <= $COLNumber; i++ ))
-            do
-                echo $i"-" ${COLs_Names[i]} "("${COLs_Types[i]}")"
-            done
-    
-            ############################
-            ## check if condition index is a number 
-            read -p "condition on which coloumn number : " Con_Index 
-            checkInt $Con_Index
-            while [[ $? -ne 0 || $Con_Index -le 0 || $Con_Index -gt $COLNumber ]]
-            do
-                warning_icon "Please enter a valid value"
-                info_icon "ener value in between 1 and $COLNumber"
-                read -p "condition on which coloumn number : " Con_Index 
-                checkInt $Con_Index
-            done 
-    
-    
-            checkCondition
-            ############################### ci=2 && cvalue=hsn >>> $2==hsn && 3=>23 >>>> $3=23
-            ## to update table 
-            awk -F:  '( NR!=1 && $"'$Con_Index'"=="'"${Con_Value}"'" ) {$"'$COL_Index'"="'"${newValue}"'"} {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
-            
-    
-            if [ -a ./.tmp1 ]
-            then
-                cat ./.tmp1 > $TBName;
-                rm ./.tmp1;
-                successful_icon "Update successfull"
-            fi
-        else
-            fail_icon "Table $TBName doesn't exist"
-        fi
-    else
-        fail_icon "Invalid input please enter a valid name"
-    fi
-
-
-}
-
 #----------------------------------------------------------#
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
@@ -922,10 +754,9 @@ echo "  @   3->  Rename Tables                                  @ "
 echo "  @   4->  Drop Table                                     @ "
 echo "  @   5->  Insert Into Table                              @ "
 echo "  @   6->  Select From Table                              @ "
-echo "  @   7->  Update From Table                              @ "
-echo "  @   8->  Delete From Table                              @ "
-echo "  @   9->  Back to the main menu                          @ "
-echo "  @   10-> Exit                                           @ "
+echo "  @   7->  Delete From Table                              @ "
+echo "  @   8->  Back to the main menu                          @ "
+echo "  @   9-> Exit                                            @ "
 echo "  \______________________________________________________/  "
   
   echo  
@@ -938,10 +769,9 @@ echo "  \______________________________________________________/  "
     4 )  Drop_Table ;;
     5 )  Insert_Into_Table ;;
     6 )  select_Menu ;;
-    7 )  Update_From_Table ;;
-    8 )  Delete_From_Table ;;
-    9 )  main_Menu ;;
-    10 )  exit ;;
+    7 )  Delete_From_Table ;;
+    8 )  main_Menu ;;
+    9 )  exit ;;
     * )  warning_icon "Please select valid pick" ; tables_Menu ;
   esac
 
