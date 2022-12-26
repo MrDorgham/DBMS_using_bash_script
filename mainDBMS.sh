@@ -494,6 +494,18 @@ function check_Pkey_Insert
         fi
 }
 
+
+function checkPK 
+{
+   if `cut -f$1 -d: $TBName | grep -w $2 >> /dev/null 2>/dev/null` #-w, --word-regexp  force PATTERN to match only whole words
+        then
+        return 1
+    else
+        return 0
+    fi 
+}
+
+
 function check_Non_Pkey_Insert
 {
         read -p "enter ($fieldName) of type ($fieldType) : " value
@@ -521,15 +533,7 @@ function check_Non_Pkey_Insert
         fi
 }
 
-function checkPK 
-{
-   if `cut -f$1 -d: $TBName | grep -w $2 >> /dev/null 2>/dev/null`
-        then
-        return 1
-    else
-        return 0
-    fi 
-}
+
 
 function insertField 
 {
@@ -545,6 +549,8 @@ function insertField
 #----------------------------------------------------------#
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
+
+
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 #-----------------Tables functions checks2-----------------#
 function checkCondition
@@ -559,7 +565,7 @@ function checkCondition
         echo "nothin">> /dev/null
         #nothing
     else 
-        printWarning "please enter a valid value"
+        warning_icon "please enter a valid value"
         checkCondition
     fi
 
@@ -569,8 +575,8 @@ function checkCondition
         checkInt $Con_Value
         if [ $? != 0 ]
         then
-            printWarning "Please enter a valid value"
-            printInfo "Enter only numbers"
+            warning_icon "Please enter a valid value"
+            info_icon "Enter only numbers"
             checkCondition
         fi
     fi
@@ -587,7 +593,7 @@ function checkUpdate
         echo "nothin">> /dev/null
         #nothing
     else 
-        printWarning "please enter a valid value"
+        warning_icon "please enter a valid value"
         checkUpdate
     fi
 
@@ -597,21 +603,21 @@ function checkUpdate
         checkInt $newValue
         if [ $? != 0 ]
         then
-            printFailure "Please enter a valid value"
-            printInfo "Enter only numbers"
+            fail_icon "Please enter a valid value"
+            info_icon "Enter only numbers"
             checkUpdate
         fi
     fi
     ####################
     ## check if he update pk
-
-    if Test_P_Key=`grep "%:" ./data_bases/$DBname/$TBName | cut -d ":" -f$COL_Index | grep "%P_Key%" ` 
+    pwd
+    if Test_P_Key=`grep "%:" $TBName | cut -d ":" -f$COL_Index | grep "%P_Key%" ` 
     then
         checkPK $COL_Index "$newValue"
         while [ $? != 0 ]
         do
-            printFailure "Violation of PK constraint"
-            printWarning "Please enter a valid value"
+            fail_icon "Violation of PK constraint"
+            warning_icon "Please enter a valid value"
             checkUpdate
         done
     fi
