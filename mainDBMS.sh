@@ -534,6 +534,7 @@ function check_Non_Pkey_Insert
 }
 
 
+
 function insertField 
 {
       if [ $i -eq $COLNumber ]
