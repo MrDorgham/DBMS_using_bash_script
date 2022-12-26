@@ -819,8 +819,8 @@ function Update_From_Table {
             checkInt $Con_Index
             while [[ $? -ne 0 || $Con_Index -le 0 || $Con_Index -gt $COLNumber ]]
             do
-                printWarning "Please enter a valid value"
-                printInfo "ener value in between 1 and $COLNumber"
+                warning_icon "Please enter a valid value"
+                info_icon "ener value in between 1 and $COLNumber"
                 read -p "condition on which coloumn number : " Con_Index 
                 checkInt $Con_Index
             done 
@@ -832,18 +832,6 @@ function Update_From_Table {
             awk -F:  '( NR!=1 && $"'$Con_Index'"=="'"${Con_Value}"'" ) {$"'$COL_Index'"="'"${newValue}"'"} {for(i=1 ;i<=NF ;i++ ) { if (i==NF) print $i; else printf "%s",$i":"}}' $TBName > ./.tmp;
             
     
-            #####################################
-            ## to prevent update if it violate pk
-            if testPK=`grep "%:" $TBName | cut -d ":" -f$COL_Index | grep "%P_Key%" ` 
-            then 
-                x=`cat ./.tmp1 | cut -f$COL_Index -d:| grep -w "$newValue"|wc -l | cut -f1 -d" "`
-                if [ $x -gt 1 ]
-                then
-                    fail_icon "Update fail due to PK constraint violation"
-                     rm ./.tmp1;
-                fi   
-            fi
-            
             if [ -a ./.tmp1 ]
             then
                 cat ./.tmp1 > $TBName;
