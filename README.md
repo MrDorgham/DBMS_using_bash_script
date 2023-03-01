@@ -38,11 +38,6 @@ To get started with DBMS using Bash Script, follow these simple steps:
 4. Run the script:
     - `./mainDBMS.sh`
 
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](https://chat.openai.com/chat/LICENSE) file for details.
-
 ## Conclusion
 
 DBMS using Bash Script is a simple yet powerful tool that can help you quickly create and manage databases. Whether you're working on a small project or a large-scale application, DBMS using Bash Script can help you stay organized and efficient.
