@@ -38,11 +38,6 @@ To get started with DBMS using Bash Script, follow these simple steps:
 4. Run the script:
     - `./mainDBMS.sh`
 
-## Usage
-
-To see a list of available commands and their usage, run the following command:
-
-- `./dbms.sh help`
 
 ## License
 
